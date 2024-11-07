@@ -52,12 +52,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Endurhlaða við resize
     window.addEventListener('resize', adjustViewBox);
     adjustViewBox(); // Keyra við upphaf
-    window.pauseAudio = pauseAudio;
+    window.pauseSagaPlayer = pauseSagaPlayer;
     // Kalla á fallið við hleðslu síðunnar
     window.onload = adjustViewBox;
     // Endurkalla fallið þegar gluggastærð breytist
     window.onresize = adjustViewBox;
-    window.startPlayback = startPlayback;
+    window.playAudioInSagaPlayer = playAudioInSagaPlayer;
 
 
     if (audioElement.src !== liveStreamUrl) {
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // Stillum activePlayer þegar spilun hefst
-    function startPlayer(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream) {
+    function startPlayer(audioUrl, episodeTitle, buttonId) {
         // Athugum hvort annar flipi sé með activePlayer flaggið
         const currentActivePlayer = localStorage.getItem('activePlayer');
         if (currentActivePlayer && currentActivePlayer !== window.name) {
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Setja þennan flipa sem active player
         localStorage.setItem('activePlayer', window.name); // nota window.name til að auðkenna flipann
         //playAudioInSagaPlayer(audioUrl, episodeTitle, buttonId, imageUrl);
-        startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream);
+        playAudioInSagaPlayer(audioUrl, episodeTitle, buttonId);
     }
 
 
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (event.key === 'activePlayer' && event.newValue !== window.name) {
             // Ef annar flipi er orðinn active, setjum okkar spilara á pásu
             console.log("Annar flipi er nú virkur, stilli þennan á pásu.");
-            pauseAudio(); // kalla á fall til að setja spilarann á pásu
+            pauseSagaPlayer(); // kalla á fall til að setja spilarann á pásu
         }
     });
 
@@ -98,7 +98,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // Setja isLiveStream sem true í localStorage og breyta display title
         localStorage.setItem('isLiveStream', true);
         localStorage.setItem('episodeTitle', 'Bein útsending');
-        localStorage.removeItem('audioUrl'); // Fjarlægir þáttaslóðina
 
         // Búa til og senda pause og play events til að uppfæra hnappa í þáttaraðir
         const previousButtonId = localStorage.getItem('buttonId');
@@ -122,11 +121,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Play function með betri hleðslustjórnun
     playBtn.addEventListener('click', () => {
-        const audioUrl = localStorage.getItem('audioUrl') || liveStreamUrl; // Nota liveStreamUrl ef audioUrl er ekki skilgreind
-        const episodeTitle = localStorage.getItem('episodeTitle') || 'Bein útsending'; // Sjálfgefið heiti ef ekkert annað er
-        const buttonId = localStorage.getItem('buttonId') || 'playBtn'; // Sjálfgefið buttonId ef það vantar
-        const imageUrl = localStorage.getItem('imageUrl') || logoUrl; // Nota logoUrl ef ekkert annað er til staðar
-
         if (!isPlaying) {
             isLiveStream = audioElement.src === liveStreamUrl;
 
@@ -140,10 +134,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (audioElement.readyState < 3) {
                 console.log('Bíð eftir að hljóð hleðst...');
                 audioElement.addEventListener('canplay', () => {
-                    startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream);
+                    startPlayback();
                 });
             } else {
-                startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream);
+                startPlayback();
             }
         }
     });
@@ -229,7 +223,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    /*
     function startPlayback(audioUrl = null, episodeTitle) {
         // Sækja episodeTitle úr localStorage
         console.log('Sóttur episodeTitle:', episodeTitle);  // Skoða hvað er sótt
@@ -267,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Spilun mistókst:', error);
         });
     }
-*/
+
 
     // Pause function
     pauseBtn.addEventListener('click', () => {
@@ -275,8 +268,8 @@ document.addEventListener('DOMContentLoaded', function () {
             audioElement.pause();
             isPlaying = false;
             playButtonVisible();
-            // Call pauseAudio with buttonId
-            pauseAudio();  // You should have currentButtonId defined
+            // Call pauseSagaPlayer with buttonId
+            pauseSagaPlayer();  // You should have currentButtonId defined
         }
     });
 
@@ -293,23 +286,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    function pauseAudio(audioUrl = null) {
+    function pauseSagaPlayer(audioUrl = null) {
         if (!audioUrl) {
             audioUrl = localStorage.getItem('audioSrc') || ''; // Setur það ef það er geymt
         }
 
         if (audioElement) {
             audioElement.pause();
-            isPlaying = false;
             playButtonVisible();
-            dispatchPlayerEvents('pause', buttonId);
+            isPlaying = false;
 
+
+            if (!buttonId) {
+                buttonId = localStorage.getItem('buttonId'); // Sækir úr localStorage ef það er ekki global
+            }
+
+            if (buttonId) {
+                const pauseEvent = new CustomEvent('playerPaused', { detail: { buttonId, audioUrl } });
+                document.dispatchEvent(pauseEvent);
+            } else {
+                console.warn("buttonId fannst ekki í localStorage við sendingu á playerPaused.");
+            }
         }
     }
 
 
-
-    function startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream) {
+    function playAudioInSagaPlayer(audioUrl, episodeTitle, newButtonId, imageUrl) {
         if (!audioElement) {
             console.error("Audio element not found!");
             return;
@@ -322,44 +324,56 @@ document.addEventListener('DOMContentLoaded', function () {
         // Athuga fyrst hvort audioElement.src þarf að breyta
         if (audioElement.src !== audioUrl) {
             audioElement.src = audioUrl;
-            audioElement.load();  // Hlaða hljóð á ný ef slóðin hefur breyst
-            /* const savedAudioUrl = localStorage.getItem('audioUrl');
-             if (audioUrl !== savedAudioUrl) {
-                 localStorage.setItem('audioUrl', audioUrl);
-             }*/
+            audioElement.load();
+
+            // Uppfæra localStorage aðeins ef audioUrl breytist
+            const savedAudioUrl = localStorage.getItem('audioUrl');
+            if (audioUrl !== savedAudioUrl) {
+                localStorage.setItem('audioUrl', audioUrl);
+            }
         }
 
         // Uppfæra mynd út frá því hvort það er bein útsending eða þáttur
-        const imageToDisplay = isLiveStream ? logoUrl : imageUrl || localStorage.getItem('imageUrl') || logoUrl;
+        const imageToDisplay = audioUrl === liveStreamUrl ? logoUrl : imageUrl;
         displayImage.src = imageToDisplay;
         localStorage.setItem('imageUrl', imageToDisplay);
 
         // Uppfæra titil og vista hann í localStorage ef hann breytist
-        updateDisplayTitle(isLiveStream, episodeTitle);
-        localStorage.setItem('episodeTitle', episodeTitle);
-
-        // Uppfæra titil og vista hann í localStorage ef hann breytist
-        if (isLiveStream) {
-            // Tengja viðburð fyrir lifandi streymi
-            audioElement.addEventListener('timeupdate', updateLiveTimeline);
-        } else {
+        if (episodeTitle) {
             updateDisplayTitle(false, episodeTitle);
+            localStorage.setItem('episodeTitle', episodeTitle);
             // Tengja viðburð fyrir upptöku-tímalínu
             audioElement.addEventListener('timeupdate', updateRecordingTimeline);
+        } else {
+            updateDisplayTitle(true, 'Bein útsending');
+            // Tengja viðburð fyrir lifandi streymi
+            audioElement.addEventListener('timeupdate', updateLiveTimeline);
         }
         updateLiveButtonAnimation();
-
 
         // Spila hljóð og sýna rétta hnappa
         audioElement.play().then(() => {
             console.log("Episode started playing:", audioUrl);
             isPlaying = true;
             pauseButtonVisible();
-            // Senda play atburð til að uppfæra hnappa í viðmóti
-            dispatchPlayerEvents('play', buttonId, audioUrl, episodeTitle);
+
+            dispatchPlayerEvents('play', newButtonId, audioUrl, episodeTitle);
         }).catch((error) => {
             console.error("Error while playing episode:", error);
         });
+    }
+
+
+
+    // Býr til og sendir play og pause atburði til þáttaraða
+    function dispatchPlayerEvents(action, buttonId, audioUrl = null, episodeTitle = null) {
+        if (action === 'pause') {
+            const pauseEvent = new CustomEvent('playerPaused', { detail: { buttonId } });
+            document.dispatchEvent(pauseEvent);
+        } else if (action === 'play' && audioUrl && episodeTitle) {
+            const playEvent = new CustomEvent('playerStarted', { detail: { audioUrl, episodeTitle, buttonId } });
+            document.dispatchEvent(playEvent);
+        }
     }
 
 
@@ -462,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const button = document.querySelector(`#play-pause-btn-${savedButtonId}`);
                     if (button && wasPlaying) {
                         updatePlayPauseButton(button, true);
-                        startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, false);
+                        playAudioInSagaPlayer(savedAudioUrl, savedEpisodeTitle, savedButtonId, savedImageUrl);
                     }
                 }
             } else if (isLiveStream) {

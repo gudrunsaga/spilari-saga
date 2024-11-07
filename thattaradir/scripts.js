@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const audioElement = document.getElementById('audio-element');
 
     window.togglePlayPause = togglePlayPause;
+    window.dispatchPlayerEvents = dispatchPlayerEvents;
 
     fetch(rssUrl)
         .then(response => response.text())
@@ -140,14 +141,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    function dispatchPlayerEvents(audioUrl, episodeTitle, buttonId, imageUrl) {
-        const pauseEvent = new CustomEvent('playerPaused', { detail: { buttonId } });
-        document.dispatchEvent(pauseEvent);
-
-        const playEvent = new CustomEvent('playerStarted', { detail: { audioUrl, episodeTitle, buttonId, imageUrl } });
-        document.dispatchEvent(playEvent);
+    // Sameinaða dispatchPlayerEvents aðferðin
+    function dispatchPlayerEvents(action, buttonId, audioUrl = null, episodeTitle = null) {
+        if (action === 'pause') {
+            const pauseEvent = new CustomEvent('playerPaused', { detail: { buttonId } });
+            document.dispatchEvent(pauseEvent);
+        } else if (action === 'play' && audioUrl && episodeTitle) {
+            const playEvent = new CustomEvent('playerStarted', { detail: { audioUrl, episodeTitle, buttonId } });
+            document.dispatchEvent(playEvent);
+        }
     }
-
 
     function updatePlayPauseButton(button, isPlaying) {
         button.setAttribute('data-playing', String(isPlaying));
@@ -205,11 +208,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    /*
 
     function togglePlayPause(button, audioUrl, episodeTitle, buttonId, imageUrl) {
-        console.log("audioUrl:", audioUrl);  // Þetta ætti að sýna `audioUrl` gildi í console
         // Sækja spilunarstöðu (isPlaying) út frá hnappinum
         const isPlaying = button.getAttribute('data-playing') === 'true';
+
 
         // Athugum hvort `newButtonId` sé gildur, ef ekki tilkynnum villu og hættum
         if (!buttonId || buttonId === "") {
@@ -219,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Gakktu úr skugga um að þú notir `buttonId` (ekki `audioUrl`) í köllin hér fyrir neðan
         saveEpisodeData(buttonId, episodeTitle, imageUrl, audioUrl); // Nota `buttonId`, ekki `audioUrl`
-        dispatchPlayerEvents(audioUrl, episodeTitle, buttonId, imageUrl) // Nota `buttonId`, ekki `audioUrl`
+        dispatchPlayerEvents('play', buttonId, audioUrl, episodeTitle); // Fyrir spilun
 
         // Uppfæra mynd slóð ef hún er til staðar
         const episodeInfo = button.closest('.episode-info');
@@ -236,26 +240,56 @@ document.addEventListener('DOMContentLoaded', function () {
         pauseOtherEpisodes(button);
 
         if (isPlaying) {
-            // Stöðva hljóðspilun og uppfæra hnappinn í "play"
             pauseAudio();
             updatePlayPauseButton(button, false);
         } else {
-            // Athuga hvort við séum að skipta úr beinni útsendingu í þátt
-            const storedAudioSource = localStorage.getItem('audioSource');
-            if (storedAudioSource === liveStreamUrl) {
-                // Breyta í þáttaspilun
-                localStorage.setItem('isLiveStream', false);
-                //             playAudioInSagaPlayer(audioUrl, episodeTitle, buttonId, updatedImageUrl);
-            } else {
-                // Ef skipt er úr þætti í beina útsendingu, stöðva fyrri þátt og spila útsendinguna
-                const previousButtonId = localStorage.getItem('buttonId');
-                if (previousButtonId && previousButtonId !== buttonId) {
-                    pauseSagaPlayer(previousButtonId);
-                }
-                //                playAudioInSagaPlayer(liveStreamUrl, 'Bein útsending', buttonId, updatedImageUrl);
-            }
-            playAudioInSagaPlayer(audioUrl, episodeTitle, buttonId, updatedImageUrl);
+            startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, audioUrl === liveStreamUrl);
             updatePlayPauseButton(button, true);
+        }
+    }
+*/
+
+    function togglePlayPause(button, audioUrl, episodeTitle, buttonId, imageUrl) {
+        // Sækja spilunarstöðu (isPlaying) út frá hnappinum
+        const isPlaying = button.getAttribute('data-playing') === 'true';
+
+        // Athuga hvort `buttonId` sé gildur, ef ekki tilkynna villu og hætta
+        if (!buttonId || buttonId === "") {
+            console.warn("Ógilt buttonId:", buttonId);
+            return; // Stöðva framkvæmd ef buttonId er ógilt
+        }
+
+        if (isPlaying) {
+            // Ef spilarinn er í gangi, stöðva hann og uppfæra hnappinn
+            pauseAudio();
+            updatePlayPauseButton(button, false);
+            dispatchPlayerEvents('pause', buttonId); // Senda 'pause' atburð með buttonId
+        } else {
+            // Ef spilarinn er ekki í gangi, hefja spilun
+
+            // Geyma þáttaupplýsingar
+            saveEpisodeData(buttonId, episodeTitle, imageUrl, audioUrl);
+
+            // Uppfæra mynd slóð ef hún er til staðar
+            const episodeInfo = button.closest('.episode-info');
+            const updatedImageUrl = episodeInfo && episodeInfo.querySelector('img')
+                ? episodeInfo.querySelector('img').src
+                : imageUrl;
+            localStorage.setItem('imageUrl', updatedImageUrl);
+
+            // Uppfæra episodeTitle ef það er til staðar
+            episodeTitle = episodeInfo ? episodeInfo.querySelector('strong').textContent : 'Enginn þáttur';
+            localStorage.setItem('episodeTitle', episodeTitle);
+
+            // Stöðva aðra þætti ef til þarf
+            pauseOtherEpisodes(button);
+
+            // Hefja spilun og uppfæra hnappinn
+            startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, audioUrl === liveStreamUrl);
+            updatePlayPauseButton(button, true);
+
+            // Senda 'play' atburð með buttonId og þáttaupplýsingum
+            dispatchPlayerEvents('play', buttonId, audioUrl, episodeTitle);
         }
     }
 
@@ -269,14 +303,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 updatePlayPauseButton(svg, false);
             }
         });
-    }
-
-
-    function pauseAudio() {
-        if (audioElement) {
-            audioElement.pause();
-            pauseSagaPlayer();  // Make sure Saga Player is paused too
-        }
     }
 
 
