@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.togglePlayPause = togglePlayPause;
     window.dispatchPlayerEvents = dispatchPlayerEvents;
+    window.updatePlayPauseButton = updatePlayPauseButton;
 
     fetch(rssUrl)
         .then(response => response.text())
@@ -208,50 +209,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    /*
 
     function togglePlayPause(button, audioUrl, episodeTitle, buttonId, imageUrl) {
         // Sækja spilunarstöðu (isPlaying) út frá hnappinum
         const isPlaying = button.getAttribute('data-playing') === 'true';
 
-
-        // Athugum hvort `newButtonId` sé gildur, ef ekki tilkynnum villu og hættum
-        if (!buttonId || buttonId === "") {
-            console.warn("Ógilt buttonId:", buttonId);
-            return; // Stöðva framkvæmd ef buttonId er ógilt
+        // Ef um beina útsendingu er að ræða, stilltu myndina á logoUrl
+        if (audioUrl === liveStreamUrl) {
+            imageUrl = logoUrl;
+            localStorage.setItem('imageUrl', logoUrl); // Geyma logoUrl í localStorage fyrir beina útsendingu
         }
-
-        // Gakktu úr skugga um að þú notir `buttonId` (ekki `audioUrl`) í köllin hér fyrir neðan
-        saveEpisodeData(buttonId, episodeTitle, imageUrl, audioUrl); // Nota `buttonId`, ekki `audioUrl`
-        dispatchPlayerEvents('play', buttonId, audioUrl, episodeTitle); // Fyrir spilun
-
-        // Uppfæra mynd slóð ef hún er til staðar
-        const episodeInfo = button.closest('.episode-info');
-        const updatedImageUrl = episodeInfo && episodeInfo.querySelector('img')
-            ? episodeInfo.querySelector('img').src
-            : imageUrl;
-        localStorage.setItem('imageUrl', updatedImageUrl);
-
-        // Uppfæra episodeTitle ef það er til staðar
-        episodeTitle = episodeInfo ? episodeInfo.querySelector('strong').textContent : 'Enginn þáttur';
-        localStorage.setItem('episodeTitle', episodeTitle);
-
-        // Stöðva aðra þætti ef til þarf
-        pauseOtherEpisodes(button);
-
-        if (isPlaying) {
-            pauseAudio();
-            updatePlayPauseButton(button, false);
-        } else {
-            startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, audioUrl === liveStreamUrl);
-            updatePlayPauseButton(button, true);
-        }
-    }
-*/
-
-    function togglePlayPause(button, audioUrl, episodeTitle, buttonId, imageUrl) {
-        // Sækja spilunarstöðu (isPlaying) út frá hnappinum
-        const isPlaying = button.getAttribute('data-playing') === 'true';
 
         // Athuga hvort `buttonId` sé gildur, ef ekki tilkynna villu og hætta
         if (!buttonId || buttonId === "") {
