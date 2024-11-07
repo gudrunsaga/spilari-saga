@@ -1,0 +1,181 @@
+/* Episode list stillingar */
+#episode-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#episode-list li {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+}
+
+.play-pause-btn {
+    margin-left: 8px;
+    cursor: pointer;
+    /* Gera hnappinn klikkanlegan */
+    position: absolute;
+    right: 0.5em;
+}
+
+/* Episode image stillingar */
+#episode-list div img {
+    max-width: 90px;
+    max-height: 90px;
+    margin: 0 20px 0 0;
+    object-fit: cover;
+    border-radius: 8px;
+    z-index: 1;
+}
+
+.episode {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+}
+
+/* Episode info divs stillingar */
+.episode-info {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+
+}
+
+.episode-description div {
+    display: flex;
+    flex-direction: row;
+    max-width: 90%;
+}
+
+
+.episode-description div div {
+    position: relative;
+    max-height: 4.4em;
+
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+
+}
+
+.episode-description div::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1.7em;
+    background: linear-gradient(to top, white, transparent);
+    pointer-events: none;
+
+}
+
+.episode-description div.expanded::after {
+    content: none;
+    height: 0em;
+
+}
+
+.episode-description div div.expanded {
+    max-height: none;
+    overflow: visible;
+
+}
+
+.show-more-btn {
+    height: 30px;
+    width: 100px;
+    padding: 2px 2px 2px 2px;
+    left: 75%;
+    bottom: 2em;
+}
+
+
+.episode-info div div::-webkit-scrollbar {
+    width: 8px;
+
+}
+
+.episode-info div div::-webkit-scrollbar-thumb {
+    background-color: #888;
+
+    border-radius: 10px;
+
+}
+
+.episode-info div div::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+
+}
+
+.episode-info div div::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+
+    border-radius: 10px;
+
+}
+
+/* Episode info stillingar */
+.episode-info {
+    width: 100%;
+    /* Gerir .episode-info sveigjanlegt og fyllir foreldri */
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin-bottom: 0.7em;
+    justify-content: center;
+}
+
+.episode-info strong {
+    font-size: 1.2em;
+}
+
+.episode-description-container {
+    margin-bottom: 1em;
+}
+
+.episode-info span {
+    position: relative;
+    bottom: 1.5em;
+    left: 8em;
+    font-size: 1.1em;
+    font-weight: 600;
+    font-style: italic;
+}
+
+
+@media (max-width: 600px) {
+    .episode-info div div {
+        position: relative;
+        max-height: 7.5em;
+        overflow: auto;
+    }
+
+    #episode-list li {
+        flex-direction: column;
+        width: 100%;
+
+    }
+
+    #episode-list div img {
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+
+    .episode-info {
+        max-width: 100%;
+        align-items: flex-start;
+    }
+
+    #episode-list div img {
+        max-width: 80px;
+        max-height: 80px;
+        margin: 0 10px 0 0;
+        object-fit: contain;
+        border-radius: 7px;
+    }
+}
