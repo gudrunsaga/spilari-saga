@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const displayImage = document.querySelector('.episode-image img');
     let episodeTitle = localStorage.getItem('episodeTitle') || 'Smelltu á hnappinn hér til hægri fyrir beina útsendingu';  // Sækir þáttatitil eða setur 'Unknown Episode' sem fallback
     audioElement.preload = 'auto';
-    const logoUrl = 'https://wordpress-1000093-3520884.cloudwaysapps.com/wp-content/uploads/2024/10/logo_utvarp_saga_blar_bakgrunnur.png';
+    const logo = window.playerUtils.playerConfig.logoUrl;
 
     displayTitle.textContent = episodeTitle || 'Smelltu á spila til að hlusta í beinni'
     const liveStreamUrl = 'https://stream.utvarpsaga.is/Hljodver'; // URL fyrir beina útsendingu
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // Setur logo þegar síðan hleðst ef ekkert er í spilun
-    displayImage.src = localStorage.getItem('imageUrl') || logoUrl;
+    displayImage.src = localStorage.getItem('imageUrl') || logo;
     displayImage.style.display = 'block';
 
     // Gæti verið hjálplegt að bæta þessu við til að tryggja að displayImage sé áfram sýnilegt
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('load', () => {
         try {
             const audioElement = document.getElementById('audio-element');
-            const savedImageUrl = localStorage.getItem('imageUrl') || logoUrl;
+            const savedImageUrl = localStorage.getItem('imageUrl') || logo;
             const savedTime = localStorage.getItem('playerTime');
             const wasPlaying = localStorage.getItem('isPlaying') === 'true';
             const savedVolume = parseFloat(localStorage.getItem('playerVolume'));
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     document.getElementById('live-stream-button').addEventListener('click', function () {
-        const imageUrl = logoUrl; // Stillir myndina á logoUrl fyrir beina útsendingu
+        const imageUrl = logo; // Stillir myndina á logoUrl fyrir beina útsendingu
 
         // Setja isLiveStream sem true í localStorage og breyta display title
         localStorage.setItem('isLiveStream', true);
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const audioUrl = localStorage.getItem('audioUrl') || liveStreamUrl; // Nota liveStreamUrl ef audioUrl er ekki skilgreind
         const episodeTitle = localStorage.getItem('episodeTitle') || 'Bein útsending'; // Sjálfgefið heiti ef ekkert annað er
         const buttonId = localStorage.getItem('buttonId') || 'playBtn'; // Sjálfgefið buttonId ef það vantar
-        const imageUrl = localStorage.getItem('imageUrl') || logoUrl; // Nota logoUrl ef ekkert annað er til staðar
+        const imageUrl = localStorage.getItem('imageUrl') || logo; // Nota logoUrl ef ekkert annað er til staðar
         const isLiveStream = localStorage.getItem('isLiveStream');
 
         startPlayer(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream);
@@ -343,7 +343,6 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem('buttonId', buttonId);
         localStorage.setItem('isLiveStream', isLiveStream); // Geymir stöðu lifandi útsendingar
         localStorage.setItem('isPlaying', 'true'); // Uppfært til að byrja spilun
-        localStorage.setItem('buttonId', buttonId);
 
         if (!audioElement) {
             console.error("Audio element not found!");
@@ -363,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
             audioElement.src = audioUrl;
         }
         // Uppfæra mynd út frá því hvort það er bein útsending eða þáttur
-        const imageToDisplay = isLiveStream ? logoUrl : imageUrl || localStorage.getItem('imageUrl') || logoUrl;
+        const imageToDisplay = isLiveStream ? logo : imageUrl || localStorage.getItem('imageUrl') || logo;
         displayImage.src = imageToDisplay;
         localStorage.setItem('imageUrl', imageToDisplay);
         // Uppfæra titil og vista hann í localStorage ef hann breytist
