@@ -7,6 +7,9 @@ Author: Útvarp Saga
 */
 
 function thattaradir_enqueue_scripts() {
+    // Hlaða player-utils.js
+    wp_enqueue_script('player-utils', plugin_dir_url(__FILE__) . '/saga-player/player-utils.js', array(), null, true);
+
     // Hleð inn scripts.js fyrir þáttaraðir
     wp_enqueue_script('thattaradir-script', plugin_dir_url(__FILE__) . 'scripts.js', array(), null, true);
     

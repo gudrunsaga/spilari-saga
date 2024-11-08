@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const bufferBar = document.getElementById('buffer-bar');
     const liveStreamButton = document.getElementById('live-stream-button');
     const displayImage = document.querySelector('.episode-image img');
-    let isPlaying = false; // Til að fylgjast með hvort spilarinn sé að spila
     let episodeTitle = localStorage.getItem('episodeTitle') || 'Smelltu á hnappinn hér til hægri fyrir beina útsendingu';  // Sækir þáttatitil eða setur 'Unknown Episode' sem fallback
     audioElement.preload = 'auto';
     const logoUrl = 'https://wordpress-1000093-3520884.cloudwaysapps.com/wp-content/uploads/2024/10/logo_utvarp_saga_blar_bakgrunnur.png';
@@ -29,10 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let isLiveStream = audioElement.src === liveStreamUrl;  // Breyta sem ákvarðar hvort þetta er bein útsending eða upptaka
     let liveStreamStart = new Date(); // Upphafstími þáttarins (UTC)
 
-    let buttonId = '';  // Declare currentButtonId globally
     let isDragging = false;
     let isDraggingVolume = false;
-    let imageUrl = ''; // Fjarlægðu eina skilgreiningu eða notaðu einungis let imageUrl einu sinni
 
 
     // Setur logo þegar síðan hleðst ef ekkert er í spilun
@@ -52,290 +49,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Endurhlaða við resize
     window.addEventListener('resize', adjustViewBox);
     adjustViewBox(); // Keyra við upphaf
-    window.pauseAudio = pauseAudio;
+
     // Kalla á fallið við hleðslu síðunnar
     window.onload = adjustViewBox;
     // Endurkalla fallið þegar gluggastærð breytist
     window.onresize = adjustViewBox;
-    window.startPlayback = startPlayback;
-
-
-    /*
-    if (audioElement.src !== liveStreamUrl) {
-        audioElement.src = liveStreamUrl;
-        audioElement.load(); // Hlaða aðeins ef slóðin hefur breyst
-    }*/
-
-    // Viðburður til að fylgjast með breytingum í localStorage
-    window.addEventListener('beforeunload', function () {
-        const currentActivePlayer = localStorage.getItem('activePlayer');
-        if (currentActivePlayer === window.name) {
-            // Setja flag til að láta vita að flipi er að hætta
-            localStorage.setItem('playerClosed', window.name);
-        }
-    });
-
-
-    // Stillum activePlayer þegar spilun hefst
-    function startPlayer(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream) {
-        const currentActivePlayer = localStorage.getItem('activePlayer');
-        if (currentActivePlayer && currentActivePlayer !== window.name) {
-            const lastActiveTime = parseInt(localStorage.getItem('activePlayerTime')) || 0;
-            const now = Date.now();
-            const heartbeatInterval = 3000; // 3 sekúndur
-
-            // Ef enginn heartbeat frá activePlayer hefur komið fram síðustu 3 sekúndur, tökum við við stjórn
-            if (now - lastActiveTime > heartbeatInterval) {
-                console.log("Yfirtekur spilarann þar sem fyrri flipi er ekki virkur lengur.");
-                localStorage.setItem('activePlayer', window.name);
-                localStorage.setItem('activePlayerTime', now);
-            } else {
-                console.log("Annar flipi er nú þegar virkur.");
-                return; // Ef fyrri flipi er virkur, gerum ekkert frekar
-            }
-        } else {
-            localStorage.setItem('activePlayer', window.name);
-            localStorage.setItem('activePlayerTime', Date.now());
-        }
-
-        startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream);
-    }
-
-
-
-    document.getElementById('live-stream-button').addEventListener('click', function () {
-        const imageUrl = logoUrl; // Stillir myndina á logoUrl fyrir beina útsendingu
-
-        // Setja isLiveStream sem true í localStorage og breyta display title
-        localStorage.setItem('isLiveStream', true);
-        localStorage.setItem('episodeTitle', 'Bein útsending');
-        localStorage.removeItem('audioUrl'); // Fjarlægir þáttaslóðina
-        localStorage.setItem('imageUrl', imageUrl);
-
-        // Kalla á updateTimetotal með isLiveStream stillt á true
-        updateTimetotal(true, timeElapsed, slashTime, timeTotal);
-
-        // Búa til og senda pause og play events til að uppfæra hnappa í þáttaraðir
-        const previousButtonId = localStorage.getItem('buttonId');
-        if (previousButtonId) {
-            dispatchPlayerEvents('pause', previousButtonId);
-        }
-
-        // Núllstillum buttonId þannig að það sé ekki lengur tengt við þáttaraðir
-        localStorage.removeItem('buttonId');
-        // Kalla á startPlayer fyrir bein útsending
-        startPlayer(liveStreamUrl, 'Bein útsending', 'live-stream-button');
-    });
-
-
-    const event = new CustomEvent('updateStreamStatus', {
-        detail: { isLiveStream: audioElement.src === liveStreamUrl }
-    });
-    window.dispatchEvent(event);
-
-
-    // Play function með betri hleðslustjórnun
-    playBtn.addEventListener('click', () => {
-        const audioUrl = localStorage.getItem('audioUrl') || liveStreamUrl; // Nota liveStreamUrl ef audioUrl er ekki skilgreind
-        const episodeTitle = localStorage.getItem('episodeTitle') || 'Bein útsending'; // Sjálfgefið heiti ef ekkert annað er
-        const buttonId = localStorage.getItem('buttonId') || 'playBtn'; // Sjálfgefið buttonId ef það vantar
-        const imageUrl = localStorage.getItem('imageUrl') || logoUrl; // Nota logoUrl ef ekkert annað er til staðar
-
-        startPlayback(audioUrl, episodeTitle, buttonId, imageUrl);
-    });
-
-
-    function adjustViewBox() {
-        var width = window.innerWidth;
-        var svg = document.getElementById('timeline');
-
-        if (width <= 320) {  // Mjög þröngir skjár
-            svg.setAttribute('viewBox', '0 0 320 12');
-        } else if (width <= 480) {  // Smá símar
-            svg.setAttribute('viewBox', '0 0 480 12');
-        } else if (width <= 768) {  // Spjaldtölvur
-            svg.setAttribute('viewBox', '0 0 768 12');
-        } else {  // Stærri skjáir
-            svg.setAttribute('viewBox', '0 0 729 12');
-        }
-    }
-
-
-    // Virkja animation þegar bein útsending er í gangi
-    function updateLiveButtonAnimation() {
-        if (isLiveStream) {
-            liveStreamButton.classList.add('live-animation');
-        } else {
-            liveStreamButton.classList.remove('live-animation');
-        }
-    }
-
-
-    function checkAndAnimateTitle() {
-        const displayTitle = document.getElementById('displaying-title');
-        const displayTitleContainer = document.querySelector('.display-title');
-
-        if (!displayTitle || !displayTitleContainer) {
-            console.warn("displayTitle or displayTitleContainer not found");
-            return;
-        }
-        // Athuga hvort textinn fari yfir max-width gildi
-        if (displayTitle.scrollWidth > displayTitleContainer.clientWidth) {
-            console.log("Title is too long, enabling animation");
-            displayTitle.style.animation = 'scroll-left 20s linear infinite';
-        } else {
-            console.log("Title fits within container, no animation needed");
-            displayTitle.style.animation = 'none';
-        }
-    }
-
-
-    // Uppfæra displayTitle og athuga animation
-    function updateDisplayTitle(isLiveStream, episodeTitle) {
-        const displayTitle = document.getElementById('displaying-title');
-
-        if (isLiveStream) {
-            displayTitle.textContent = 'Bein útsending';
-        } else {
-            displayTitle.textContent = episodeTitle;
-        }
-
-        // Kalla á fallið til að athuga hvort animation eigi að byrja
-        checkAndAnimateTitle();
-    }
-
-
-    // Uppfæra displayTitle og athuga animation
-    function updateTimetotal(isLiveStream, timeElapsed, slashTime, timeTotal) {
-
-        if (isLiveStream) {
-            const currentTime = formatTime(audioElement.currentTime);
-            timeElapsed.textContent = currentTime;
-            timeTotal.textContent = ""; // Felur heildartíma fyrir beina útsendingu
-            slashTime.textContent = ""; // Felur skástrikið
-            timeTotal.style.display = "none";
-            slashTime.style.display = "none";
-        } else {
-            const currentTime = formatTime(audioElement.currentTime);
-            const totalTime = !isNaN(audioElement.duration) ? formatTime(audioElement.duration) : "00:00";
-            timeElapsed.textContent = currentTime;
-            slashTime.textContent = " / ";
-            timeTotal.textContent = totalTime;
-            timeTotal.style.display = "inline";
-            slashTime.style.display = "inline";
-        }
-    }
-
-
-
-    // Pause function
-    pauseBtn.addEventListener('click', () => {
-        if (isPlaying) {
-            audioElement.pause();
-            isPlaying = false;
-            playButtonVisible();
-            // Call pauseAudio with buttonId
-            pauseAudio();  // You should have currentButtonId defined
-        }
-    });
-
-
-    function playButtonVisible() {
-        playBtn.style.display = 'block';
-        pauseBtn.style.display = 'none';
-    }
-
-
-    function pauseButtonVisible() {
-        playBtn.style.display = 'none';
-        pauseBtn.style.display = 'block';
-    }
-
-
-    function pauseAudio(audioUrl = null) {
-        if (!audioUrl) {
-            audioUrl = localStorage.getItem('audioSrc') || ''; // Setur það ef það er geymt
-        }
-
-        if (audioElement) {
-            audioElement.pause();
-            isPlaying = false;
-            playButtonVisible();
-            dispatchPlayerEvents('pause', buttonId);
-
-        }
-    }
-
-
-
-    function startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream) {
-        if (!audioElement) {
-            console.error("Audio element not found!");
-            return;
-        }
-
-
-        if (!isPlaying) {
-            isLiveStream = audioElement.src === liveStreamUrl;
-            // Athuga fyrst hvort audioElement.src þarf að breyta
-            if (audioElement.src !== audioUrl) {
-                audioElement.src = audioUrl;
-            }
-
-            // Uppfæra mynd út frá því hvort það er bein útsending eða þáttur
-            const imageToDisplay = isLiveStream ? logoUrl : imageUrl || localStorage.getItem('imageUrl') || logoUrl;
-            displayImage.src = imageToDisplay;
-            localStorage.setItem('imageUrl', imageToDisplay);
-
-            // Uppfæra titil og vista hann í localStorage ef hann breytist
-            updateDisplayTitle(isLiveStream, episodeTitle);
-            localStorage.setItem('episodeTitle', episodeTitle);
-
-            // Uppfæra titil og vista hann í localStorage ef hann breytist
-            if (isLiveStream) {
-                // Tengja viðburð fyrir lifandi streymi
-                audioElement.addEventListener('timeupdate', updateLiveTimeline);
-            } else {
-                updateDisplayTitle(false, episodeTitle);
-                // Tengja viðburð fyrir upptöku-tímalínu
-                audioElement.addEventListener('timeupdate', updateRecordingTimeline);
-            }
-            updateLiveButtonAnimation();
-
-            // Fjarlægja fyrri timeupdate atburði til að forðast margfaldan binding
-            audioElement.removeEventListener('timeupdate', updateRecordingTimeline);
-            audioElement.removeEventListener('timeupdate', updateLiveTimeline);
-            if (audioElement.readyState < 3) {
-                console.log('Bíð eftir að hljóð hleðst...');
-                audioElement.load();
-            } else {
-                handlePlay();
-            }
-
-
-        }
-    }
-
-
-
-    function handlePlay() {
-        audioElement.play().then(() => {
-            console.log('Spilun byrjar strax');
-            isPlaying = true;
-            pauseButtonVisible();
-            dispatchPlayerEvents('play', buttonId, audioElement.src, episodeTitle);
-        }).catch((error) => {
-            console.error('Ekki tókst að spila hljóð:', error);
-        });
-    }
-
-    // Flytur spilarann í body til að tryggja að hann viðhaldist milli síðuhleðslna
-    window.addEventListener('beforeunload', function () {
-        const currentActivePlayer = localStorage.getItem('activePlayer');
-        if (currentActivePlayer === window.name) {
-            localStorage.removeItem('activePlayer');
-        }
-    });
+    window.startPlayer = startPlayer;
+    window.pauseAudio = pauseAudio;
 
 
     // Villumeðhöndlun við unload
@@ -423,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const button = document.querySelector(`#play-pause-btn-${savedButtonId}`);
                     if (button && wasPlaying) {
                         updatePlayPauseButton(button, true);
-                        startPlayback(audioUrl, episodeTitle, buttonId, imageUrl, false);
+                        startPlayer(audioElement.src, episodeTitle, localStorage.getItem('buttonId'), imageUrl, false);
                     }
                 }
             } else if (isLiveStream) {
@@ -447,17 +167,236 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (wasPlaying) {
-                audioElement.play().then(() => {
-                    isPlaying = true;
-                    pauseButtonVisible();
-                }).catch((error) => {
-                    console.warn('Sjálfvirk spilun ekki leyfð:', error);
-                });
+                handlePlay();
             }
         } catch (e) {
             console.error('Villa við að hlaða gögn úr localStorage:', e);
         }
     });
+
+    // Pause function
+    pauseBtn.addEventListener('click', pauseAudio);
+
+    // Viðburður til að fylgjast með breytingum í localStorage
+    window.addEventListener('beforeunload', function () {
+        const currentActivePlayer = localStorage.getItem('activePlayer');
+        if (currentActivePlayer === window.name) {
+            // Setja flag til að láta vita að flipi er að hætta
+            localStorage.setItem('playerClosed', window.name);
+        }
+    });
+
+
+    document.getElementById('live-stream-button').addEventListener('click', function () {
+        const imageUrl = logoUrl; // Stillir myndina á logoUrl fyrir beina útsendingu
+
+        // Setja isLiveStream sem true í localStorage og breyta display title
+        localStorage.setItem('isLiveStream', true);
+        localStorage.setItem('episodeTitle', 'Bein útsending');
+        localStorage.removeItem('audioUrl'); // Fjarlægir þáttaslóðina
+        //localStorage.setItem('imageUrl', imageUrl);
+
+        // Kalla á updateTimetotal með isLiveStream stillt á true
+        //updateTimetotal(true, timeElapsed, slashTime, timeTotal);
+
+        // Búa til og senda pause og play events til að uppfæra hnappa í þáttaraðir
+        const previousButtonId = localStorage.getItem('buttonId');
+        if (previousButtonId) {
+            dispatchPlayerEvents('pause', previousButtonId);
+        }
+
+        // Núllstillum buttonId þannig að það sé ekki lengur tengt við þáttaraðir
+        localStorage.removeItem('buttonId');
+        // Kalla á startPlayer fyrir bein útsending
+        startPlayer(liveStreamUrl, 'Bein útsending', null, imageUrl, true);
+    });
+
+
+    const event = new CustomEvent('updateStreamStatus', {
+        detail: { isLiveStream: audioElement.src === liveStreamUrl }
+    });
+    window.dispatchEvent(event);
+
+
+    // Play function með betri hleðslustjórnun
+    playBtn.addEventListener('click', () => {
+        const audioUrl = localStorage.getItem('audioUrl') || liveStreamUrl; // Nota liveStreamUrl ef audioUrl er ekki skilgreind
+        const episodeTitle = localStorage.getItem('episodeTitle') || 'Bein útsending'; // Sjálfgefið heiti ef ekkert annað er
+        const buttonId = localStorage.getItem('buttonId') || 'playBtn'; // Sjálfgefið buttonId ef það vantar
+        const imageUrl = localStorage.getItem('imageUrl') || logoUrl; // Nota logoUrl ef ekkert annað er til staðar
+        const isLiveStream = localStorage.getItem('isLiveStream');
+
+        startPlayer(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream);
+    });
+
+
+    function adjustViewBox() {
+        var width = window.innerWidth;
+        var svg = document.getElementById('timeline');
+
+        if (width <= 320) {  // Mjög þröngir skjár
+            svg.setAttribute('viewBox', '0 0 320 12');
+        } else if (width <= 480) {  // Smá símar
+            svg.setAttribute('viewBox', '0 0 480 12');
+        } else if (width <= 768) {  // Spjaldtölvur
+            svg.setAttribute('viewBox', '0 0 768 12');
+        } else {  // Stærri skjáir
+            svg.setAttribute('viewBox', '0 0 729 12');
+        }
+    }
+
+
+    // Virkja animation þegar bein útsending er í gangi
+    function updateLiveButtonAnimation() {
+        if (isLiveStream) {
+            liveStreamButton.classList.add('live-animation');
+        } else {
+            liveStreamButton.classList.remove('live-animation');
+        }
+    }
+
+
+    function checkAndAnimateTitle() {
+        const displayTitle = document.getElementById('displaying-title');
+        const displayTitleContainer = document.querySelector('.display-title');
+
+        if (!displayTitle || !displayTitleContainer) {
+            console.warn("displayTitle or displayTitleContainer not found");
+            return;
+        }
+        // Athuga hvort textinn fari yfir max-width gildi
+        if (displayTitle.scrollWidth > displayTitleContainer.clientWidth) {
+            console.log("Title is too long, enabling animation");
+            displayTitle.style.animation = 'scroll-left 20s linear infinite';
+        } else {
+            console.log("Title fits within container, no animation needed");
+            displayTitle.style.animation = 'none';
+        }
+    }
+
+
+    // Uppfæra displayTitle og athuga animation
+    function updateDisplayTitle(isLiveStream, episodeTitle) {
+        const displayTitle = document.getElementById('displaying-title');
+
+        if (isLiveStream) {
+            displayTitle.textContent = 'Bein útsending';
+        } else {
+            displayTitle.textContent = episodeTitle;
+        }
+
+        // Kalla á fallið til að athuga hvort animation eigi að byrja
+        checkAndAnimateTitle();
+    }
+
+
+    // Uppfæra displayTitle og athuga animation
+    function updateTimetotal(isLiveStream, timeElapsed, slashTime, timeTotal) {
+
+        if (isLiveStream) {
+            const currentTime = formatTime(audioElement.currentTime);
+            timeElapsed.textContent = currentTime;
+            timeTotal.style.display = "none";
+            slashTime.style.display = "none";
+        } else {
+            const currentTime = formatTime(audioElement.currentTime);
+            const totalTime = !isNaN(audioElement.duration) ? formatTime(audioElement.duration) : "00:00";
+            timeElapsed.textContent = currentTime;
+            slashTime.textContent = " / ";
+            timeTotal.textContent = totalTime;
+            timeTotal.style.display = "inline";
+            slashTime.style.display = "inline";
+        }
+    }
+
+
+    function playButtonVisible() {
+        playBtn.style.display = 'block';
+        pauseBtn.style.display = 'none';
+    }
+
+
+    function pauseButtonVisible() {
+        playBtn.style.display = 'none';
+        pauseBtn.style.display = 'block';
+    }
+
+
+    function pauseAudio() {
+        console.log("pauseAudio keyrist fyrir buttonId:", localStorage.getItem('buttonId'));
+        if (audioElement && localStorage.getItem('isPlaying') === 'true') {
+            audioElement.pause();
+            localStorage.setItem('isPlaying', 'false'); // Spilun byrjar, vista 'true' í localStorage
+            playButtonVisible();
+            dispatchPlayerEvents('pause', localStorage.getItem('buttonId')); // Nota réttan buttonId ef hann er skilgreindur
+        }
+    }
+
+
+
+    function startPlayer(audioUrl, episodeTitle, buttonId, imageUrl, isLiveStream) {
+
+        console.log("ýtt á play og startPlayer keyrist");
+
+        localStorage.setItem('activePlayer', window.name);
+        localStorage.setItem('activePlayerTime', Date.now());
+        localStorage.setItem('buttonId', buttonId);
+        localStorage.setItem('isLiveStream', isLiveStream); // Geymir stöðu lifandi útsendingar
+        localStorage.setItem('isPlaying', 'true'); // Uppfært til að byrja spilun
+        localStorage.setItem('buttonId', buttonId);
+
+        if (!audioElement) {
+            console.error("Audio element not found!");
+            return;
+        }
+
+
+        // Stöðva bein útsending ef hún var í gangi
+        if (localStorage.getItem('isPlaying') === 'true' && localStorage.getItem('isLiveStream') === 'true' && !isLiveStream) {
+            audioElement.pause();
+            localStorage.setItem('isPlaying', 'false');
+        }
+
+
+        // Athuga fyrst hvort audioElement.src þarf að breyta
+        if (audioElement.src !== audioUrl) {
+            audioElement.src = audioUrl;
+        }
+        // Uppfæra mynd út frá því hvort það er bein útsending eða þáttur
+        const imageToDisplay = isLiveStream ? logoUrl : imageUrl || localStorage.getItem('imageUrl') || logoUrl;
+        displayImage.src = imageToDisplay;
+        localStorage.setItem('imageUrl', imageToDisplay);
+        // Uppfæra titil og vista hann í localStorage ef hann breytist
+        updateDisplayTitle(isLiveStream, episodeTitle);
+        localStorage.setItem('episodeTitle', episodeTitle);
+        // Fjarlægja fyrri timeupdate atburði til að forðast margfaldan binding
+        audioElement.removeEventListener('timeupdate', updateRecordingTimeline);
+        audioElement.removeEventListener('timeupdate', updateLiveTimeline);
+
+        if (isLiveStream) {
+            // Tengja viðburð fyrir lifandi streymi
+            audioElement.addEventListener('timeupdate', updateLiveTimeline);
+        } else {
+            // Tengja viðburð fyrir upptöku-tímalínu
+            audioElement.addEventListener('timeupdate', updateRecordingTimeline);
+        }
+        updateLiveButtonAnimation();
+
+        handlePlay();
+    }
+
+
+    function handlePlay() {
+        console.log("ýtt á play og handlePlay keyrist");
+
+        audioElement.play().then(() => {
+            localStorage.setItem('isPlaying', 'true');
+            pauseButtonVisible();
+            dispatchPlayerEvents('play', localStorage.getItem('buttonId'), audioElement.src, localStorage.getItem('episodeTitle'));
+        }).catch(error => {
+            console.error('Ekki tókst að spila hljóð:', error);
+        });
+    }
 
 
     // Uppfæra tímalínuna fyrir lifandi straum
@@ -485,7 +424,6 @@ document.addEventListener('DOMContentLoaded', function () {
             progressBar.setAttribute('width', timelineWidth);  // Setja breidd í SVG
             timelineKnob.setAttribute('cx', timelineWidth - knobWidth / 2);  // Setja stöðu skífunnar lengst til hægri
         }
-        //        setLiveStreamMode();
     }
 
 

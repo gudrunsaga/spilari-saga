@@ -8,6 +8,8 @@ Author: Guðrún Stella Ágústsdóttir
 
 // Aðferð til að hlaða CSS og JS skrárnar aðeins þegar shortcoden er notaður
 function enqueue_saga_player_files() {
+    // Hlaða player-utils.js
+    wp_enqueue_script('player-utils', plugin_dir_url(__FILE__) . 'player-utils.js', array(), null, true);
     // Hlaða CSS
     wp_enqueue_style('saga-player-style', plugin_dir_url(__FILE__) . 'styles.css');
     //wp_enqueue_script('google-sheets-script', site_url() . '/saga-spilar/script.js', array(), null, true);
