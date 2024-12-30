@@ -2,107 +2,84 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const rssUrl = 'https://rss.app/feeds/_LsjQvMCo0ez1dcAs.xml';
     const audioElement = document.getElementById('audio-element');
-    const logo = window.playerUtils.playerConfig.logoUrl;
+    const logo = 'https://utvarpsaga.is/wp-content/uploads/2024/11/logo_utvarp_saga_blar_bakgrunnur.png';
 
     window.togglePlayPause = togglePlayPause;
     window.dispatchPlayerEvents = dispatchPlayerEvents;
     window.updatePlayPauseButton = updatePlayPauseButton;
 
-    fetch(rssUrl)
-        .then(response => response.text())
-        .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
-        .then(data => {
-            const items = data.querySelectorAll("item");
-            let html = '';
-            items.forEach((el, index) => {
 
-                const title = el.querySelector("title").textContent;
-                const audioUrl = el.querySelector("enclosure").getAttribute("url");
-                let description = el.querySelector("description").textContent;
-                const pubDate = formatDate(new Date(el.querySelector("pubDate").textContent));
-                const imageUrl = el.querySelector("image > url") ? el.querySelector("image > url").textContent : '';
+    async function fetchEpisodes(rssUrl) {
+        try {
+            // Hreinsa gömlu gögnin
+            localStorage.removeItem('rssData');
 
-                let imageElement = '';
-                if (imageUrl) {
-                    imageElement = `<img src="${imageUrl}" alt="Þáttur Mynd" onerror="this.style.display='none'">`;
-                }
+            const response = await fetch(rssUrl);
+            const str = await response.text();
+            localStorage.setItem('rssData', str); // Geyma nýju gögnin
+            const data = new window.DOMParser().parseFromString(str, "text/xml");
+            renderEpisodes(data);
 
-                description = description.replace(/--.*?(<\/div>)/, '$1');
-
-                // Setja inn skilyrði til að birta hnappinn aðeins ef lýsingin er lengri en ákveðið skilyrði
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = description;
-                document.body.appendChild(tempDiv); // Þarf tímabundið til að fá hæðina
-
-                if (tempDiv.scrollHeight > 100) { // Skilyrði fyrir lengd lýsingar
-                    html += `
-                        <li class="episode">
-                            <div class="episode-info">
-                                ${imageElement}
-                                <strong>${title}</strong>
-
-                                <div class="episode-description">
-                                ${description}
-                                </div>
-<svg id="play-pause-btn-${index}" class="play-pause-btn" data-id="${index}" data-audio-url="${audioUrl}" 
-        width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg" 
-        onclick="togglePlayPause(this, '${audioUrl}', '${title}', '${index}', '${imageElement}')">                                    <circle cx="19.5" cy="19.5" r="19.5" fill="#392BFF"/>
-                                    <path d="M13.0615 12.4164C13.0664 10.8768 14.736 9.91976 16.067 10.6937L29.028 18.2311C30.359 19.0051 30.3529 20.9296 29.0172 21.6952L16.009 29.1512C14.6733 29.9168 13.0097 28.9493 13.0145 27.4097L13.0615 12.4164Z" fill="#FFFCFC"/>
-                                </svg>
-
-                                <span>${pubDate}</span>
-   
-                                <button class="show-more-btn">Lesa meira</button>
-                                                       
-                                </div>
-                        </li>`;
-                } else {
-                    html += `
-                        <li class="episode">
-                            <div class="episode-info">
-                                ${imageElement}
-                                <strong>${title}</strong>
-                                
-                                <div class="episode-description">
-                                ${description}
-                                   </div>
-                           
-                                <svg id="play-pause-btn-${index}" class="play-pause-btn" data-id="${index}" data-audio-url="${audioUrl}" 
-        width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg" 
-        onclick="togglePlayPause(this, '${audioUrl}', '${title}', '${index}', '${imageElement}')">
-                                    <circle cx="19.5" cy="19.5" r="19.5" fill="#392BFF"/>
-                                    <path d="M13.0615 12.4164C13.0664 10.8768 14.736 9.91976 16.067 10.6937L29.028 18.2311C30.359 19.0051 30.3529 20.9296 29.0172 21.6952L16.009 29.1512C14.6733 29.9168 13.0097 28.9493 13.0145 27.4097L13.0615 12.4164Z" fill="#FFFCFC"/>
-                                </svg>
-                                                                  <span>${pubDate}</span>
-                               
-                                </div>
-                        </li>`;
-                }
-
-                document.body.removeChild(tempDiv); // Fjarlægja tímabundið element
-                // Kalla á saveEpisodeData með öllum gögnum
-                saveEpisodeData(index, title, imageUrl, audioUrl);
-            });
-            document.getElementById('episode-list').innerHTML = html;
+            // Kalla á fallið eftir að lýsingar hafa verið settar í DOM
+            handleEpisodeDescriptions();
+        } catch (err) {
+            console.error('Error fetching episodes:', err);
+        }
+    }
 
 
-            // Bæta við atburðarhandlerum fyrir "Lesa meira" hnappana
-            document.querySelectorAll('.show-more-btn').forEach(button => {
-                button.addEventListener('click', function () {
-                    // Finna þáttalýsinguna út frá `button` án `episode-description-container`
-                    const descriptionDiv = button.parentElement.querySelector('.episode-description > div > div');
+    function renderEpisodes(data) {
+        const items = data.querySelectorAll("item");
+        const html = Array.from(items).map((el, buttonId) => createEpisodeHtml(el, buttonId + 1)).join('');
+        document.getElementById('episode-list').innerHTML = html;
+    }
 
-                    if (descriptionDiv.classList.contains('expanded')) {
-                        descriptionDiv.classList.remove('expanded');
-                        button.textContent = 'Lesa meira';
-                    } else {
-                        descriptionDiv.classList.add('expanded');
-                        button.textContent = 'Sjá minna';
-                    }
-                });
-            });
-        })
-        .catch(err => console.log(err));
+
+    function createEpisodeHtml(el, buttonId) {
+        const title = el.querySelector("title")?.textContent || 'Ónefndur þáttur';
+        const audioUrl = el.querySelector("enclosure")?.getAttribute("url") || '';
+        const description = sanitizeDescription(el.querySelector("description")?.textContent || 'Engin lýsing til staðar.');
+        const pubDate = formatDate(new Date(el.querySelector("pubDate")?.textContent));
+        const imageUrl = el.querySelector("image > url")?.textContent || '';
+        const imageElement = imageUrl ? `<img src="${imageUrl}" alt="Þáttur Mynd" onerror="this.style.display='none'">` : '';
+
+        return `
+            <li class="episode">
+                <div class="episode-info">
+                    ${imageElement}
+                    <strong>${title}</strong>
+                    <div class="episode-description">
+                        ${description}
+                    </div>
+                    ${createPlayPauseButton(buttonId, audioUrl)}
+                    <span>${pubDate}</span>
+                    <button class="show-more-btn">Lesa meira</button>
+                </div>
+            </li>
+        `;
+    }
+
+
+
+    function createPlayPauseButton(buttonId, audioUrl) {
+        return `
+            <svg id="play-pause-btn-${buttonId}" class="play-pause-btn" data-id="${buttonId}" data-audio-url="${audioUrl}"
+                width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg">                
+                <circle cx="19.5" cy="19.5" r="19.5" fill="#392BFF"/>
+                <path d="M13.0615 12.4164C13.0664 10.8768 14.736 9.91976 16.067 10.6937L29.028 18.2311C30.359 19.0051 30.3529 20.9296 29.0172 21.6952L16.009 29.1512C14.6733 29.9168 13.0097 28.9493 13.0145 27.4097L13.0615 12.4164Z" fill="#FFFCFC"/>
+            </svg>
+        `;
+    }
+
+
+
+    function sanitizeDescription(description) {
+        return description.replace(/--.*?(<\/div>)/, '$1');
+    }
+
+
+
+    fetchEpisodes(rssUrl);
 
 
     function getButtonById(buttonId) {
@@ -120,10 +97,40 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    function handleEpisodeDescriptions() {
+        document.querySelectorAll('.episode-description > div > div').forEach(description => {
+            console.log('Fann lýsingu:', description);
+            console.log('Lýsingartexti:', description.textContent.trim());
+
+            const episodeInfo = description.closest('.episode-info');
+            const showMoreButton = episodeInfo.querySelector('.show-more-btn');
+
+            if (!description || description.textContent.trim() === '' || description.scrollHeight < 95) {
+                showMoreButton.classList.add('hidden'); // Felur hnappinn
+                showMoreButton.classList.remove('visible');
+            } else {
+                showMoreButton.classList.add('visible'); // Sýnir hnappinn
+                showMoreButton.classList.remove('hidden');
+            }
+        });
+    }
+
+
+
+    document.addEventListener('click', function (event) {
+        if (event.target.matches('.show-more-btn')) {
+            const description = event.target.closest('.episode-info').querySelector('.episode-description > div > div');
+            description.classList.toggle('expanded');
+            event.target.textContent = description.classList.contains('expanded') ? 'Sjá minna' : 'Lesa meira';
+        }
+    });
+
+
 
     function saveEpisodeData(buttonId, episodeTitle, imageUrl, audioUrl) {
-        if (!buttonId || buttonId === 'default-button-id') {
-            console.warn("Ógilt buttonId í saveEpisodeData:", buttonId);
+
+        if (!buttonId || buttonId <= 0 || !audioUrl) {
+            console.warn("Ógilt buttonId eða gögn í saveEpisodeData:", { buttonId, episodeTitle, imageUrl, audioUrl });
             return;
         }
         localStorage.setItem('buttonId', buttonId);
@@ -147,8 +154,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updatePlayPauseButton(button, isPlaying) {
         button.setAttribute('data-playing', String(isPlaying));
-        button.innerHTML = window.playerUtils.getPlayPauseSvg(isPlaying);
+        button.innerHTML = getPlayPauseSvg(isPlaying);
     }
+
+
+    // Fall til að búa til SVG fyrir play/pause takka
+    function getPlayPauseSvg(isPlaying) {
+        return isPlaying
+            ? `<svg width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="19.5" cy="19.5" r="19.5" fill="#392BFF"/>
+            <rect x="11" y="9.80029" width="6" height="19.7259" rx="3" fill="white"/>
+            <rect x="22" y="9.80029" width="6" height="19.7259" rx="3" fill="white"/>
+        </svg>`
+            : `<svg width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="19.5" cy="19.5" r="19.5" fill="#392BFF"/>
+            <path d="M13.0635 12.4164C13.0683 10.8768 14.738 9.91976 16.0689 10.6937L29.03 18.2311C30.3609 19.0051 30.3549 20.9296 29.0191 21.6952L16.011 29.1512C14.6753 29.9168 13.0116 28.9493 13.0164 27.4097L13.0635 12.4164Z" fill="#FFFCFC"/>
+        </svg>`;
+    };
 
 
     // scripts.js
@@ -163,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const storedAudioSource = localStorage.getItem('audioSource');
     if (storedAudioSource) {
         audioElement.src = storedAudioSource;
-        //audioElement.load();
     }
 
 
@@ -180,21 +201,25 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('playerPaused', function (event) {
         const { buttonId } = event.detail;  // Fáum buttonId frá viðburðinum
         console.log('Received playerPaused event for buttonId:', buttonId);
+
         if (buttonId) {
-            const button = getButtonById(buttonId);
+            const button = document.querySelector(`#play-pause-btn-${buttonId}`);
             if (button) {
                 // Í playerPaused event handler:
                 updatePlayPauseButton(button, false);
+            } else {
+                console.warn(`Hnappur fannst ekki fyrir buttonId: ${buttonId}`);
             }
+        } else {
+            console.warn("Ógildur buttonId í playerPaused atburði.");
         }
     });
 
 
     // Listen for play event from saga-player.js
     document.addEventListener('playerStarted', function (event) {
-        const { audioUrl, episodeTitle, buttonId } = event.detail;
+        const { buttonId } = event.detail;
         const button = getButtonById(buttonId);
-        console.log("buttonId í lplayerStarted í script:", buttonId);
         if (button) {
             // Í playerStarted event handler:
             updatePlayPauseButton(button, true);
@@ -202,47 +227,64 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
+    // Event delegation fyrir Play/Pause atburðina
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('.play-pause-btn');
+        if (!button) return; // Ekki gera neitt ef ekki er smellt á play/pause hnapp
+
+        // Sækja upplýsingar úr data-attributum
+        const audioUrl = button.getAttribute('data-audio-url');
+        const episodeTitle = button.closest('.episode-info').querySelector('strong').textContent;
+        const buttonId = button.getAttribute('data-id');
+        const imageUrl = button.closest('.episode-info').querySelector('img')?.src || logo;
+        // Vista buttonId í localStorage
+        togglePlayPause(button, audioUrl, episodeTitle, buttonId, imageUrl);
+    });
+
+
     function togglePlayPause(button, audioUrl, episodeTitle, buttonId, imageUrl) {
 
-        console.log("ýtt á play og togglePlayPause keyrist");
-        console.log("buttonId:", buttonId);
+        let isLiveStream = localStorage.getItem('isLiveStream') === 'true';
+
+        const previousButtonId = localStorage.getItem('buttonId');
+
+        // Ef núverandi spilun er bein útsending og við skiptum yfir í þátt
+        if (isLiveStream && previousButtonId !== buttonId) {
+            audioElement.pause();
+            localStorage.setItem('isPlaying', 'false');
+            localStorage.setItem('isLiveStream', 'false');
+        }
+
+        if (previousButtonId && previousButtonId !== buttonId) {
+
+            // Stöðva fyrri þátt og uppfæra hnappinn
+            const pauseEvent = new CustomEvent('playerPaused', { detail: { buttonId: previousButtonId } });
+            document.dispatchEvent(pauseEvent);
+            if (!audioElement.paused) {
+                audioElement.pause();
+                localStorage.setItem('isPlaying', 'false');
+            }
+        }
 
         if (!buttonId || buttonId === "default-button-id") {
             console.warn("Ógilt buttonId:", buttonId);
             return;
         }
 
-        localStorage.setItem('buttonId', buttonId);
         let isPlaying = localStorage.getItem('isPlaying') === 'true';
-        let isLiveStream = localStorage.getItem('isLiveStream') === 'true';
-
-        console.log("isPlaying:", isPlaying);
-        console.log("isLiveStream:", isLiveStream);
 
         if (isLiveStream) {
-            console.log("Bein útsending valin");
-            localStorage.setItem('isLiveStream', 'true');
             imageUrl = logo;
-        } else {
-            console.log("Þáttur valinn");
-            localStorage.setItem('isLiveStream', 'false');
-            //isLiveStream = false; // Uppfærir `isLiveStream` til að forðast ósamræmi
-            if (isPlaying && localStorage.getItem('isLiveStream') === 'true') {
-                pauseAudio();
-                isPlaying = false; // Uppfærum isPlaying til að stöðva bein útsending
-                localStorage.setItem('isPlaying', 'false'); // Þegar spilun stoppar
-                console.log("Bein útsending stöðvuð");
-            }
         }
 
+
         if (isPlaying) {
-            console.log("Spilun er í gangi, stöðva með pauseAudio()");
-            pauseAudio(); // Kalla á `pauseAudio` til að stöðva spilun
+            pauseAudio();
             updatePlayPauseButton(button, false);
             dispatchPlayerEvents('pause', buttonId);
+
         } else {
             // Stöðva alla aðra þætti
-            console.log("Stöðva aðra þætti og byrja nýjan");
             pauseOtherEpisodes(button);
 
             // Vista þáttaupplýsingar og stilla `imageUrl` fyrir þáttinn
@@ -250,11 +292,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const updatedImageUrl = episodeInfo && episodeInfo.querySelector('img')
                 ? episodeInfo.querySelector('img').src
                 : imageUrl;
-            window.playerUtils.saveEpisodeData(buttonId, episodeTitle, updatedImageUrl, audioUrl); // Vista upplýsingar um þátt
-            console.log("Kalla á startPlayer til að hefja spilun");
-            startPlayer(audioUrl, episodeTitle, buttonId, updatedImageUrl, isLiveStream); // Kalla á `startPlayer`
+            saveEpisodeData(buttonId, episodeTitle, updatedImageUrl, audioUrl); // Vista upplýsingar um þátt
+            playAudioInSagaPlayer(audioUrl, episodeTitle, buttonId, updatedImageUrl, isLiveStream); // Kalla á `startPlayer`
             updatePlayPauseButton(button, true);
             dispatchPlayerEvents('play', buttonId, audioUrl, episodeTitle);
+        }
+    }
+
+
+    function pauseAudio() {
+        if (audioElement) {
+            if (!audioElement.paused) {
+                pauseSagaPlayer();  // Make sure Saga Player is paused too             
+                localStorage.setItem('isPlaying', 'false');
+            }
         }
     }
 
@@ -267,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Í playerPaused event handler:
                 updatePlayPauseButton(svg, false);
                 svg.setAttribute('data-playing', 'false');
-                localStorage.setItem('isPlaying', 'false');
             }
         });
     }

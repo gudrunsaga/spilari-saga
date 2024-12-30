@@ -1,17 +1,7 @@
-/* Stillingar fyrir html og body til aÃ° tryggja jafnt padding */
-/*html, body {
-   /* margin: 0;*/
-/*padding: 20px; /* Sama padding Ã¡ allar hliÃ°ar */
-/* box-sizing: border-box; /* Gera padding hluta af heildarbreidd */
-/* background-color: #f0f0f0;
-    font-family: Arial, sans-serif;
-}*/
-
 #play-btn,
 #pause-btn {
     cursor: pointer;
 }
-
 
 
 #timeline,
@@ -19,10 +9,11 @@
     cursor: pointer;
 }
 
-/* Fela pause hnapp Ã­ upphafi */
+
 #pause-btn {
     display: none;
 }
+
 
 #mute-btn {
     display: none;
@@ -38,26 +29,39 @@
     margin-left: 20px;
 }
 
+
 .display-title-container {
     flex-grow: 1;
-    display: flex;
+    display: inline;
     justify-content: flex-start;
-    max-width: 100%;
-    align-items: center;
     margin-bottom: 20px;
+    flex-direction: row;
+}
 
+
+.episode-image {
+    display: flex;
+    align-items: center;
+}
+
+
+.episode-image img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    margin-right: 7px;
+    border-radius: 9px;
 }
 
 
 .display-title {
-    width: 100%;
-    /* Tryggir að það nær allri breidd */
-    margin-left: 20px;
-    margin-right: 20px;
+    max-width: 100%;
+    margin-left: 10px;
+    margin-top: 30px;
     overflow: hidden;
     white-space: nowrap;
-    justify-content: flex-end;
 }
+
 
 #displaying-title {
     font-size: 1.2rem;
@@ -68,18 +72,15 @@
 
 @keyframes scroll-left {
     0% {
-        transform: translateX(55%);
-        /* Byrjar utan sÃ½nilega svÃ¦Ã°iÃ° */
+        transform: translateX(50%);
     }
 
     85% {
         transform: translateX(-100%);
-        /* FÃ¦rir textann til baka til hÃ¦gri */
     }
 
     100% {
         transform: translateX(-100%);
-        /* FÃ¦rir textann til baka til hÃ¦gri */
     }
 }
 
@@ -95,59 +96,68 @@
     cursor: pointer;
 }
 
+
 .live-stream-btn {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
     margin-bottom: 10px;
+    transform: scale(1.2);
+    position: absolute;
+    right: 0;
+    margin-right: 10px;
+    gap: 8px;
+    /* Bilið milli táknsins og textans */
+}
+
+
+.live-stream-text {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FF0000;
+    /* Litur textans */
 }
 
 .controller_containers {
     display: flex;
     flex-direction: column;
 
-    /* MiÃ°jar spilarann */
     position: relative;
     width: 100%;
     padding: 0;
     margin: 0;
 }
 
+
 .play_pause_volume_control {
     display: flex;
     align-items: center;
-    /* LÃ¡rÃ©tt miÃ°jun fyrir play/pause og tÃ­malÃ­nu */
     flex-direction: row;
     justify-content: flex-start;
     margin-top: 10px;
 }
 
 
-
 .volumecontrol {
     display: flex;
     align-items: center;
-    /* MiÃ°ja hljÃ³Ã°styrkinn lÃ³Ã°rÃ©tt meÃ° Ã¶Ã°rum */
     margin-left: auto;
-    /* Getur stillt plÃ¡ss ef Ã¾Ãº vilt meira bil frÃ¡ tÃ­malÃ­nu */
 }
 
 #play-btn,
 #pause-btn {
     position: relative;
-    /* Gerir hana stÃ¶Ã°uga */
     top: 0;
     left: 0;
 }
 
 
-/* Grunnstilling fyrir tÃ¶lvur */
 .controller_containers,
 .timeline-container,
 #timeline {
     justify-content: center;
     width: auto 100%;
     max-width: 100%;
-    /* MiÃ°jar ef spilarinn er inni Ã­ miÃ°stÃ¶Ã°um elementum */
 }
 
 
@@ -158,163 +168,144 @@
 }
 
 
-/* StÃ­lar fyrir "live" hnapp Ã¾egar Ã¾aÃ° er bein Ãºtsending */
 #live-stream-button {
     transition: background-color 0.3s ease;
 }
 
-.episode-image img {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    margin-right: 7px;
-    border-radius: 9px;
-}
 
-
-/* Animation fyrir "pulse" Ã¡ hnappinn Ã¾egar Ã¾aÃ° er bein Ãºtsending */
 @keyframes pulse {
     0% {
         transform: scale(1);
-        /*fill: #392BFF;*/
-        /* Upphaflegur litur */
     }
 
     50% {
         transform: scale(1.1);
-        /* fill: #FF3B3B;*/
     }
 
     100% {
         transform: scale(1);
-        /*fill: #392BFF;*/
-        /* Upphaflegur litur aftur */
     }
 }
 
-/* NotaÃ° til aÃ° virkja pÃºls Ã¾egar bein Ãºtsending er Ã­ gangi */
 .live-animation {
     animation: pulse 1.5s infinite;
-    /* Animation endurtekur sig endalaust */
 }
-
 
 
 #live-stream-button path {
     fill: #FF0000;
 }
 
+
 #live-stream-button:hover path {
     fill: #000000;
 }
 
-/* Fyrir Play hnappinn - default */
+
 #play-btn circle {
     fill: #392BFF;
-    /* RauÃ°ur litur */
 }
 
-/* Fyrir Play hnappinn - default */
+
 #play-btn path {
     fill: #FFFFFF;
-    /* RauÃ°ur litur */
 }
 
-/* Ãžegar mÃºsin er yfir Play hnappnum */
 
 #play-btn:hover circle {
     fill: grey;
-    /* Svartur litur Ã¾egar mÃºsin er yfir */
 }
 
-/* Ãžegar mÃºsin er yfir Play hnappnum */
 
 #play-btn:hover path {
     fill: #000000;
-    /* Svartur litur Ã¾egar mÃºsin er yfir */
 }
 
 #pause-btn circle {
     fill: #392BFF;
-    /* RauÃ°ur litur fyrir reitina */
 }
 
 #pause-btn:hover circle {
     fill: grey;
-    /* Svartur litur fyrir reitina Ã¾egar mÃºsin er yfir */
 }
 
-
-/* Fyrir Pause hnappinn - default */
 
 #pause-btn rect {
     fill: #FFFFFF;
-    /* RauÃ°ur litur fyrir reitina */
 }
 
-/* Ãžegar mÃºsin er yfir Pause hnappnum */
 
 #pause-btn:hover rect {
     fill: #000000;
-    /* Svartur litur fyrir reitina Ã¾egar mÃºsin er yfir */
 }
 
-/* Fyrir Volume hnappinn - default */
+
 #volume-btn path,
 #volume-btn rect {
     fill: #392BFF;
-    /* RauÃ°ur litur Ã¡ hljÃ³Ã°stjÃ³rnunarhnappnum */
 }
 
-/* Ãžegar mÃºsin er yfir Volume hnappnum */
+
 #volume-btn:hover path,
 #volume-btn:hover rect {
     fill: #000000;
-    /* Svartur litur Ã¾egar mÃºsin er yfir */
 }
 
-/* Fyrir Mute hnappinn - default */
+
 #mute-btn path,
 #mute-btn rect {
     fill: #392BFF;
-    /* RauÃ°ur litur Ã¡ Ã¾Ã¶gnarhnappnum */
 }
 
-/* Ãžegar mÃºsin er yfir Mute hnappnum */
+
 #mute-btn:hover path,
 #mute-btn:hover rect {
     fill: #000000;
-    /* Svartur litur Ã¾egar mÃºsin er yfir */
 }
 
-/* StÃ­lar fyrir stÃ¦rri skjÃ¡i (tÃ¶lvuskjÃ¡ir) */
-@media (min-width: 1024px) {
-    .display-title {
-        width: 100%;
-        /* StÃ¦kkar fyrir stÃ¦rri skjÃ¡i */
-    }
-}
 
-/* StÃ­lar fyrir spjaldtÃ¶lvur */
-@media (min-width: 768px) and (max-width: 1023px) {
-    .display-title {
-        width: 100%;
-        /* StÃ¦kkar Ã¶rlÃ­tiÃ° fyrir spjaldtÃ¶lvur */
+@media (max-width: 600px) {
+    #displaying-title {
+        font-size: 1rem;
+        font-weight: bold;
+        display: inline-block;
+        will-change: transform;
     }
-}
 
-/* StÃ­lar fyrir smÃ¦rri skjÃ¡i (t.d. sÃ­mar Ã­ lÃ¡rÃ©ttri stÃ¶Ã°u) */
-@media (min-width: 480px) and (max-width: 767px) {
-    .display-title {
-        width: 100%;
-        /* SmÃ¦rri max-width fyrir litla skjÃ¡i */
+    .episode-image img {
+        width: 90px;
+        height: 90px;
     }
-}
 
-/* StÃ­lar fyrir mjÃ¶g Ã¾rÃ¶nga skjÃ¡i (t.d. sÃ­mar Ã­ lÃ³Ã°rÃ©ttri stÃ¶Ã°u) */
-@media (max-width: 479px) {
-    .display-title {
-        width: 100%;
-        /* MjÃ¶g Ã¾rÃ¶ngt fyrir mjÃ¶g litla skjÃ¡i */
+    @keyframes scroll-left {
+        0% {
+            transform: translateX(65%);
+        }
+
+        85% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(-100%);
+        }
     }
+
+    .display-title {
+        margin-left: 4px;
+        margin-right: 4px;
+    }
+
+    .display-title-container {
+        margin-left: 5px;
+        display: block;
+    }
+
+    .live-stream-btn {
+        transform: scale(1.1);
+        position: relative;
+        margin-bottom: 20px;
+        justify-content: center;
+    }
+
 }

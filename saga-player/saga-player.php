@@ -3,13 +3,14 @@
 Plugin Name: Saga Player
 Description: Shortcode fyrir spilarann Saga Player
 Version: 1.0
-Author: Guðrún Stella Ágústsdóttir
+Author: Útvarp Saga
 */
 
 // Aðferð til að hlaða CSS og JS skrárnar aðeins þegar shortcoden er notaður
 function enqueue_saga_player_files() {
-    // Hlaða player-utils.js
-    wp_enqueue_script('player-utils', plugin_dir_url(__FILE__) . 'player-utils.js', array(), null, true);
+     wp_enqueue_script('jquery'); // Tryggja að jQuery sé hlaðið
+    // Hlaða player-utils.js fyrst
+    wp_enqueue_script('player-utils', plugins_url('player-utils.js', __FILE__), array('jquery'), '1.0', true);
     // Hlaða CSS
     wp_enqueue_style('saga-player-style', plugin_dir_url(__FILE__) . 'styles.css');
     //wp_enqueue_script('google-sheets-script', site_url() . '/saga-spilar/script.js', array(), null, true);
@@ -29,24 +30,27 @@ function saga_player_shortcode() {
     ?>
 <div class="controller_containers">
 <div class="display-title-container">
-<div id="episode-image" class="episode-image">
-    <img src="" alt="Þátta mynd">
-</div>
-<div class="display-title">
-                <span id="displaying-title"></span>
-                <div id="error-message" style="display: none;"></div>
-                <button id="retry-button" style="display: none;" onclick="retryStream()">Reyna aftur</button>
-            </div>
-
-    <!-- Bein útsending hnappur fyrir ofan spilarann -->
-    <div id="live-stream-button" class="live-stream-btn">
+      <!-- Bein útsending hnappur fyrir ofan spilarann -->
+      <div id="live-stream-button" class="live-stream-btn">
 <svg width="64" height="32" viewBox="0 0 64 32" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M25.4002 9.49672C25.405 7.95712 27.0747 7.00011 28.4056 7.77409L40.3838 14.7399C41.7147 15.5139 41.7087 17.4384 40.373 18.204L28.3513 25.0945C27.0155 25.8601 25.3519 24.8926 25.3567 23.3531L25.4002 9.49672Z" fill="#FF0000"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M45.7599 7.31309C45.0294 7.88428 45.0024 8.97568 45.6147 9.67211C47.4645 11.7764 48.5 14.266 48.5 16.777C48.5 18.718 47.8813 20.6463 46.7459 22.3936C46.2813 23.1087 46.3744 24.0819 47.0462 24.6072V24.6072C47.687 25.1083 48.6173 25.0147 49.0781 24.3443C50.622 22.0983 51.5 19.5195 51.5 16.777C51.5 13.2778 50.0706 10.0449 47.6523 7.4299C47.1569 6.8942 46.3347 6.86365 45.7599 7.31309V7.31309ZM17.6232 9.97943C18.2044 9.27681 18.1624 8.21021 17.4441 7.64853V7.64853C16.8558 7.18848 16.0113 7.23096 15.5208 7.79413C13.3011 10.3425 12 13.4385 12 16.777C12 19.3536 12.775 21.7857 14.149 23.9331C14.5979 24.6346 15.5531 24.7446 16.2092 24.2315V24.2315C16.8676 23.7167 16.9736 22.7701 16.5416 22.0546C15.5418 20.3984 15 18.5933 15 16.777C15 14.3872 15.9379 12.0168 17.6232 9.97943Z" fill="#FF0000"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M50.664 4.31465C49.9343 4.88521 49.9011 5.97425 50.5317 6.65267C53.3054 9.6364 54.8887 13.2549 54.8887 16.9818C54.8887 20.2641 53.6606 23.4623 51.4729 26.2168C50.9224 26.9099 50.9929 27.9343 51.6901 28.4795V28.4795C52.3028 28.9586 53.1852 28.8933 53.678 28.2915C56.3408 25.0405 57.8887 21.1554 57.8887 16.9818C57.8887 12.26 55.9074 7.90746 52.572 4.42454C52.0653 3.89539 51.2412 3.86335 50.664 4.31465V4.31465ZM13.3559 6.65381C13.9865 5.97537 13.9531 4.88639 13.2235 4.31586V4.31586C12.6463 3.86454 11.8221 3.89661 11.3154 4.42583C7.98077 7.90853 6 12.2606 6 16.9818C6 21.1548 7.54747 25.0394 10.2095 28.2901C10.7023 28.892 11.5847 28.9573 12.1975 28.4782V28.4782C12.8947 27.933 12.9652 26.9087 12.4148 26.2156C10.2277 23.4613 9 20.2636 9 16.9818C9 13.2553 10.5829 9.63732 13.3559 6.65381Z" fill="#FF0000"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M55.0213 0.31685C54.285 0.892579 54.2572 1.9947 54.915 2.65866C58.7671 6.54664 61 11.3805 61 16.4253C61 21.0328 59.1373 25.4645 55.8796 29.1602C55.2823 29.8378 55.3392 30.8907 56.0507 31.4471V31.4471C56.6483 31.9143 57.5048 31.8637 58.0122 31.2998C61.7809 27.1112 64 21.975 64 16.4253C64 10.3589 61.3486 4.78665 56.9199 0.406069C56.4047 -0.103568 55.5922 -0.129548 55.0213 0.31685V0.31685ZM9.08656 2.6571C9.74449 1.99316 9.7167 0.890962 8.98037 0.315203V0.315203C8.40952 -0.131163 7.59705 -0.105219 7.08181 0.404336C2.65212 4.78518 0 10.3581 0 16.4253C0 21.9758 2.2197 27.1127 5.98946 31.3016C6.49688 31.8654 7.35329 31.916 7.95083 31.4488V31.4488C8.6624 30.8924 8.71926 29.8394 8.12189 29.1619C4.86321 25.4658 3 21.0335 3 16.4253C3 11.3798 5.23348 6.54534 9.08656 2.6571Z" fill="#FF0000"/>
 </svg>
+<span class="live-stream-text">Ýttu hér til að hlusta í beinni</span>
 </div>
+<div id="episode-image" class="episode-image">
+    <img src="" alt="Þátta mynd">
+    <div class="display-title">
+                <span id="displaying-title"></span>
+                <div id="error-message" style="display: none;"></div>
+                <button id="retry-button" style="display: none;" onclick="retryStream()">Reyna aftur</button>
+            </div>
+</div>
+
+
+  
 
         </div>        
 
@@ -82,11 +86,10 @@ function saga_player_shortcode() {
 
 
             <div class="time-display">
-                <span id="time-elapsed"></span><span id="slash-time"></span><span id="time-total"></span>
+                <span id="time-elapsed">00:00</span><span id="slash-time">/</span><span id="time-total">00:00</span>
             </div>
                
     
-
 
     <div class="volumecontrol">
     <!-- hljóð táknið -->

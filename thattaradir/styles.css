@@ -22,7 +22,7 @@
 }
 
 /* Episode image stillingar */
-#episode-list div img {
+.episode-description img {
     max-width: 90px;
     max-height: 90px;
     margin: 0 20px 0 0;
@@ -35,18 +35,27 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-
+    padding: 10px;
+    border-radius: 25px;
+    border: 0.1px solid red;
 }
+
 
 /* Episode info divs stillingar */
 .episode-info {
     display: flex;
     flex-direction: row;
     width: 100%;
-
 }
 
+.episode-info strong {
+    margin-bottom: 0.2em;
+    font-size: 1.4rem;
+}
+
+
 .episode-description div {
+    font-size: 1.3rem;
     display: flex;
     flex-direction: row;
     max-width: 90%;
@@ -55,30 +64,14 @@
 
 .episode-description div div {
     position: relative;
-    max-height: 4.4em;
+    max-height: 95px;
 
     overflow: hidden;
     transition: max-height 0.3s ease;
 
 }
 
-.episode-description div::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1.7em;
-    background: linear-gradient(to top, white, transparent);
-    pointer-events: none;
 
-}
-
-.episode-description div.expanded::after {
-    content: none;
-    height: 0em;
-
-}
 
 .episode-description div div.expanded {
     max-height: none;
@@ -86,38 +79,33 @@
 
 }
 
+
+.episode-description div div:not(.expanded)+.show-more-btn {
+    display: inline-block;
+}
+
+.episode-description div div.expanded+.show-more-btn {
+    display: none;
+}
+
+
+.show-more-btn.hidden {
+    display: none !important;
+}
+
+.show-more-btn.visible {
+    display: inline-block !important;
+}
+
+
 .show-more-btn {
     height: 30px;
     width: 100px;
     padding: 2px 2px 2px 2px;
     left: 75%;
-    bottom: 2em;
+    bottom: 1.5em;
 }
 
-
-.episode-info div div::-webkit-scrollbar {
-    width: 8px;
-
-}
-
-.episode-info div div::-webkit-scrollbar-thumb {
-    background-color: #888;
-
-    border-radius: 10px;
-
-}
-
-.episode-info div div::-webkit-scrollbar-thumb:hover {
-    background-color: #555;
-
-}
-
-.episode-info div div::-webkit-scrollbar-track {
-    background-color: #f1f1f1;
-
-    border-radius: 10px;
-
-}
 
 /* Episode info stillingar */
 .episode-info {
@@ -131,28 +119,57 @@
 }
 
 .episode-info strong {
-    font-size: 1.2em;
+    font-size: 1.3em;
+    line-height: 2.2rem
 }
 
-.episode-description-container {
-    margin-bottom: 1em;
-}
 
 .episode-info span {
     position: relative;
-    bottom: 1.5em;
     left: 8em;
+    margin-top: 1em;
     font-size: 1.1em;
     font-weight: 600;
     font-style: italic;
 }
 
+.play-pause-btn circle {
+    fill: #392BFF;
+}
+
+
+.play-pause-btn path {
+    fill: #FFFFFF;
+}
+
+
+.play-pause-btn:hover circle {
+    fill: grey;
+}
+
+
+.play-pause-btn:hover path {
+    fill: #000000;
+}
+
+
+.play-pause-btn rect {
+    fill: #FFFFFF;
+}
+
+.play-pause-btn:hover rect {
+    fill: #000000;
+}
+
 
 @media (max-width: 600px) {
-    .episode-info div div {
-        position: relative;
-        max-height: 7.5em;
-        overflow: auto;
+
+    .episode-description div {
+        display: flex;
+        flex-direction: row;
+        max-width: 84%;
+        font-size: 1rem;
+        line-height: 1.5rem;
     }
 
     #episode-list li {
@@ -161,9 +178,12 @@
 
     }
 
-    #episode-list div img {
-        margin-right: 10px;
-        margin-bottom: 10px;
+
+    .play-pause-btn {
+        cursor: pointer;
+        /* Gera hnappinn klikkanlegan */
+        position: absolute;
+        right: 1.5em;
     }
 
     .episode-info {
@@ -171,11 +191,41 @@
         align-items: flex-start;
     }
 
-    #episode-list div img {
+    .episode-description img {
         max-width: 80px;
         max-height: 80px;
         margin: 0 10px 0 0;
         object-fit: contain;
         border-radius: 7px;
     }
+
+
+    .episode-info span {
+        left: 0em;
+        font-size: 1em;
+        padding-bottom: 0px;
+    }
+
+
+    .episode-info strong {
+        font-size: 1.1em;
+        line-height: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .show-more-btn {
+        left: 74%;
+        height: 25px;
+        width: 85px;
+        margin-bottom: -2em;
+        bottom: 2em;
+        padding: 1px 1px 1px 1px;
+        font-size: 0.85rem;
+    }
+
+    .episode {
+        box-sizing: border-box;
+    }
+
+
 }
